@@ -1,12 +1,34 @@
-import { useState } from "react";
+import * as esbuild from "esbuild-wasm";
+import { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 
 const App = () => {
+  const ref = useRef<any>(null);
   const [input, setInput] = useState("");
   const [code, setCode] = useState("");
 
-  const handleClick = () => {
-    alert("testing");
+  const startService = async () => {
+    ref.current = await esbuild.startService({
+      worker: true,
+      wasmURL: "./esbuild.wasm",
+    });
+  };
+
+  useEffect(() => {
+    startService();
+  }, []);
+
+  const handleClick = async () => {
+    if (!ref.current) {
+      console.log("wait up");
+      return;
+    }
+    const result = await ref.current.transform(input, {
+      loader: "jsx",
+      target: "es2015",
+    });
+    setCode(result.code);
+    console.log("the transpiled code!", result);
   };
   return (
     <div>
